@@ -1,0 +1,22 @@
+[Unit]
+Description=AI-Sim Server (LLM + GenAI API simulator for sensor discovery)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aisim
+Group=aisim
+WorkingDirectory=/opt/ai-sim
+EnvironmentFile=/opt/ai-sim/ai-sim.env
+ExecStart=/opt/ai-sim/.venv/bin/python /opt/ai-sim/ai_sim_server.py
+Restart=on-failure
+RestartSec=3
+
+# Light hardening — fine for a lab.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
