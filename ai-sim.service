@@ -1,5 +1,5 @@
 [Unit]
-Description=AI-Sim Server (LLM + GenAI API simulator for sensor discovery)
+Description=AI-Sim Server (LLM :8011 + GenAI :8012 API simulator for sensor discovery)
 After=network-online.target
 Wants=network-online.target
 
@@ -12,6 +12,9 @@ EnvironmentFile=/opt/ai-sim/ai-sim.env
 ExecStart=/opt/ai-sim/.venv/bin/python /opt/ai-sim/ai_sim_server.py
 Restart=on-failure
 RestartSec=3
+
+# One process serves both listeners (AI_SIM_ROLE=both). To split them across two
+# hosts, set AI_SIM_ROLE=llm on one box and AI_SIM_ROLE=genai on the other.
 
 # Light hardening — fine for a lab.
 NoNewPrivileges=true
