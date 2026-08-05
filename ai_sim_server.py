@@ -235,6 +235,7 @@ def _hdr(kind, extra=None):
     elif kind == "anthropic":
         h.update({
             "anthropic-version": "2023-06-01",
+            "anthropic-organization-id": "org_" + uuid.uuid4().hex[:12],
             "anthropic-ratelimit-input-tokens-remaining": str(random.randint(1000, 40000)),
             "anthropic-ratelimit-output-tokens-remaining": str(random.randint(1000, 8000)),
             "request-id": _rid(),
@@ -246,6 +247,9 @@ def _hdr(kind, extra=None):
             "azureml-model-session": "d" + uuid.uuid4().hex[:12],
         })
     # ── GenAI side: media vendors only, no openai-* LLM markers ────────────────
+    # Real OpenAI still stamps openai-version / openai-processing-ms on image
+    # endpoints, but we deliberately omit them so the classifier cannot score
+    # this host:port as another OpenAI LLM surface.
     elif kind == "openai_media":
         h.update({
             "x-generation-time-ms": str(random.randint(1200, 9000)),
@@ -259,10 +263,15 @@ def _hdr(kind, extra=None):
             "x-audio-model": random.choice(["tts-1", "tts-1-hd", "whisper-1"]),
         })
     elif kind == "stability":
+        # Real Stability responses expose Finish-Reason + Seed headers.
+        seed = str(random.randint(1, 2**31 - 1))
         h.update({
             "x-generation-time-ms": str(random.randint(1500, 9000)),
             "x-media-type": "image",
+            "Finish-Reason": "SUCCESS",
             "finish-reason": "SUCCESS",
+            "Seed": seed,
+            "seed": seed,
             "x-stability-engine": "stable-diffusion-xl-1024-v1-0",
         })
     elif kind == "replicate":
@@ -270,12 +279,18 @@ def _hdr(kind, extra=None):
             "x-media-type": "image",
             "replicate-prediction-id": uuid.uuid4().hex,
             "replicate-model": "stability-ai/sdxl",
+            "Prefer": "wait",
         })
     elif kind == "elevenlabs":
+        # Real ElevenLabs SDKs expose x-character-count / character-cost.
+        cost = str(random.randint(20, 400))
         h.update({
             "x-media-type": "audio",
-            "xi-character-cost": str(random.randint(20, 400)),
+            "x-character-count": cost,
+            "character-cost": cost,
+            "xi-character-cost": cost,
             "history-item-id": uuid.uuid4().hex[:20],
+            "request-id": _rid(),
         })
     elif kind == "video":
         h.update({

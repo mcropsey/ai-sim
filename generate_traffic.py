@@ -167,13 +167,16 @@ def _vendor_headers(vendor):
         h["User-Agent"] = "stability-sdk/0.8.5"
         h["X-Media-Type"] = "image"
     elif vendor == "replicate":
+        # Real Replicate accepts both "Bearer r8_…" and "Token r8_…".
         if not AUTH_TOKEN:
-            h["Authorization"] = "Token r8_" + _rand(37)
+            h["Authorization"] = "Bearer r8_" + _rand(37)
         h["User-Agent"] = "replicate-python/0.34.0"
+        h["Prefer"] = "wait"
         h["X-Media-Type"] = "image"
     elif vendor == "elevenlabs":
         h["xi-api-key"] = _rand(32)
         h["Accept"] = "audio/mpeg"
+        h["Content-Type"] = "application/json"
         h["User-Agent"] = "elevenlabs-python/1.0.0"
         h["X-Media-Type"] = "audio"
     return h
