@@ -307,3 +307,44 @@ signatures and thresholds are not publicly documented and may be tenant-specific
 | GenAI | 8012 | POST | `/v1/text-to-speech/{voice_id}` | ElevenLabs |
 | GenAI | 8012 | POST | `/v1/video/generations` | Sora / Runway |
 | GenAI | 8012 | GET | `/v1/models` | Media model catalog |
+
+---
+
+## Change log / Fix history
+
+### 2026-08-05 — GenAI tag not appearing in AI View
+
+**Symptom:** LLM tag visible in Noname AI View; GenAI tag absent. Both ports confirmed
+reachable via tcpdump and all requests returning 200 OK.
+
+**Root cause:** `ai_sim_server.py` on 192.168.1.102 was the Jul 31 build (31,727 bytes).
+The Aug 5 build on the generator host (192.168.1.98) had additional vendor-pattern signals
+in response headers:
+
+| Vendor | What was added |
+|---|---|
+| Stability AI | `Finish-Reason: SUCCESS`, `finish-reason: SUCCESS`, `Seed: <n>`, `seed: <n>` |
+| Replicate | `Prefer: wait` |
+| ElevenLabs | `x-character-count`, `character-cost` unified to one value; added `request-id` |
+| Anthropic | `anthropic-organization-id: org_<hex>` |
+
+Additionally, the cron ran only 240 rounds (~4 min) every 15 min, leaving 11 min of
+silence — insufficient sustained volume after a service restart.
+
+**Fix:**
+- Deployed Aug 5 build to 192.168.1.102 (`ai_sim_server.py.bak.20260805` preserves the old copy)
+- Restarted `ai-sim.service`
+- Changed cron from `*/15 * * * *` with `--rounds 240` to `* * * * *` with `--rounds 0`
+  (continuous; flock prevents overlap; restart within 1 min if the process dies)
+
+**Verification after fix:**
+```
+ok llm     (curl http://127.0.0.1:8011/healthz)
+ok genai   (curl http://127.0.0.1:8012/healthz)
+Header hygiene: no openai- markers on GenAI listener (PASS)
+Stability headers: x-media-type, finish-reason, seed, x-stability-engine all present
+```
+
+**Deployment tip:** always deploy `ai_sim_server.py` to both the server (192.168.1.102:/opt/ai-sim/)
+and keep the generator host (192.168.1.98:~/ai-sim/) in sync. A size/date mismatch between
+the two is a reliable indicator that one host is running stale code.
