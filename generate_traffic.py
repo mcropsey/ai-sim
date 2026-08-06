@@ -270,9 +270,7 @@ def genai_round():
         "speed": 1.0,
     })
 
-    _hit("POST", "/v1/audio/transcriptions", "GenAI", vendor="openai_audio",
-         data={"model": "whisper-1", "language": "en", "response_format": "json"},
-         files={"file": ("clip.wav", _WAV_SILENT, "audio/wav")})
+    # /v1/audio/transcriptions omitted: Whisper converts audio→text (LLM signal, not GenAI).
 
     engine = random.choice(["stable-diffusion-xl-1024-v1-0", "stable-diffusion-v1-6"])
     _hit("POST", f"/v1/generation/{engine}/text-to-image", "GenAI", vendor="stability", json={
@@ -306,7 +304,7 @@ def genai_round():
         "fps": 24,
     })
 
-    _hit("GET", "/v1/models", "GenAI", vendor="openai_image")
+    # /v1/models omitted: strongest LLM URL pattern in the OpenAI API — contaminates GenAI score.
 
 
 def _healthz(url, label):

@@ -348,3 +348,27 @@ Stability headers: x-media-type, finish-reason, seed, x-stability-engine all pre
 **Deployment tip:** always deploy `ai_sim_server.py` to both the server (192.168.1.102:/opt/ai-sim/)
 and keep the generator host (192.168.1.98:~/ai-sim/) in sync. A size/date mismatch between
 the two is a reliable indicator that one host is running stale code.
+
+### 2026-08-05 — Remove LLM-scoring endpoints from GenAI port
+
+**Symptom:** GenAI tag still absent after vendor-header fix; sensor telemetry confirmed
+perfect capture and delivery, so the issue is at the classifier scoring layer.
+
+**Root cause:** Two endpoints in `GENAI_EXACT` were pulling the classifier score toward LLM:
+- `GET /v1/models` — the strongest LLM URL pattern in the OpenAI API; its presence on the
+  GenAI port added LLM signal that competed with and suppressed the GenAI tag.
+- `POST /v1/audio/transcriptions` (Whisper) — converts audio to text (LLM-like output),
+  not media generation. Including it on the GenAI port added text-output signal.
+
+**Fix:**
+- Removed both endpoints from `GENAI_EXACT` in `ai_sim_server.py`
+- Removed corresponding calls from `genai_round()` in `generate_traffic.py`
+- Port 8012 now serves only unambiguous media-generation endpoints:
+  DALL-E images, OpenAI TTS, Stability text-to-image, Replicate, ElevenLabs TTS, Sora video
+
+**Verification:**
+```
+curl -s http://127.0.0.1:8012/v1/models          # -> 404 unknown_url  (removed)
+curl -s http://127.0.0.1:8011/v1/models          # -> {"object":"list",...}  (still on LLM port)
+traffic log: no /v1/audio/transcriptions or GET /v1/models on GenAI port, err=0
+```

@@ -710,10 +710,11 @@ GENAI_EXACT = {
     ("POST", "/v1/images/generations"): openai_images_generations,
     ("POST", "/v1/images/edits"): openai_images_edits,
     ("POST", "/v1/audio/speech"): openai_audio_speech,
-    ("POST", "/v1/audio/transcriptions"): openai_audio_transcriptions,
+    # /v1/audio/transcriptions removed: Whisper converts audio→text (LLM-like, not generation).
+    # /v1/models removed: strongest LLM URL pattern in the OpenAI API; its presence on the
+    # GenAI port pulls the classifier score toward LLM and suppresses the GenAI tag.
     ("POST", "/v1/predictions"): replicate_predictions,
     ("POST", "/v1/video/generations"): video_generations,
-    ("GET", "/v1/models"): genai_models,
 }
 
 
