@@ -1,0 +1,11 @@
+# runtime / local-only
+logs/
+*.log
+*.out
+.traffic.lock
+.venv/
+__pycache__/
+*.pyc
+*.bak
+*.bak-*
+*.bak.*
